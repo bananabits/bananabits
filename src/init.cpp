@@ -1023,13 +1023,6 @@ bool AppInit2(boost::thread_group& threadGroup)
     if (fServer)
         StartRPCThreads();
 
-#ifdef ENABLE_WALLET
-    // Mine proof-of-stake blocks in the background
-    if (!GetBoolArg("-staking", true))
-        LogPrintf("Staking disabled\n");
-    else if (pwalletMain)
-        threadGroup.create_thread(boost::bind(&ThreadStakeMiner, pwalletMain));
-#endif
 
 BOOST_FOREACH(PAIRTYPE(std::string, CAdrenalineNodeConfig) adrenaline, pwalletMain->mapMyAdrenalineNodes)
 {
@@ -1052,6 +1045,14 @@ BOOST_FOREACH(PAIRTYPE(std::string, CAdrenalineNodeConfig) adrenaline, pwalletMa
         break;
     }
 }
+
+#ifdef ENABLE_WALLET
+    // Mine proof-of-stake blocks in the background
+    if (!GetBoolArg("-staking", true))
+        LogPrintf("Staking disabled\n");
+    else if (pwalletMain && !fMasterNode) // don't stake if we are a local masternode
+        threadGroup.create_thread(boost::bind(&ThreadStakeMiner, pwalletMain));
+#endif
 
     // ********************************************************* Step 12: finished
 
